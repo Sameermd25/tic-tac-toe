@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic Tac Toe</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #fceabb, #f8b500);
+      color: #333;
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: #6a0572;
+      margin-bottom: 10px;
+      text-shadow: 1px 1px 2px #fff;
+    }
+
+    form {
+      background: rgba(255, 255, 255, 0.3);
+      padding: 20px;
+      border-radius: 10px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    label {
+      margin-right: 10px;
+      font-weight: bold;
+    }
+
+    input[type="text"] {
+      margin: 5px;
+      padding: 8px;
+      border: none;
+      border-radius: 6px;
+      outline: none;
+      background-color: #fff;
+    }
+
+    input[type="submit"] {
+      padding: 10px 20px;
+      margin-top: 10px;
+      background-color: #6a0572;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #8e44ad;
+    }
+
+    .hide {
+      display: none;
+    }
+
+    #game-area {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .message {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+
+    .game-board {
+      height: 400px;
+      width: 400px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+      padding: 10px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      margin: 0 auto;
+    }
+
+    .box {
+      border-radius: 12px;
+      background: #ffe3ec;
+      font-size: 3rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s, transform 0.1s;
+    }
+
+    .box:hover {
+      background-color: #ffd6e8;
+      transform: scale(1.05);
+    }
+
+    .winner {
+      color: #2ecc71;
+      font-size: 2rem;
+      font-style: italic;
+      text-shadow: 1px 1px 1px #00000020;
+    }
+
+    .winningBackground {
+      background-color: #9b59b6 !important;
+      color: white !important;
+      animation: glow 1s infinite alternate;
+    }
+
+    @keyframes glow {
+      from {
+        box-shadow: 0 0 10px #9b59b6;
+      }
+
+      to {
+        box-shadow: 0 0 20px white;
+      }
+    }
+
+    #reset {
+      background-color: #f39c12;
+      color: white;
+      height: 60px;
+      width: 150px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      margin-top: 20px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #reset:hover {
+      background-color: #e67e22;
+    }
+
+    @media (max-width: 500px) {
+      .game-board {
+        width: 300px;
+        height: 300px;
+      }
+
+      .box {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>TIC TAC TOE</h1>
+  <form id="player-form">
+    <label for="player-1">Player 1</label>
+    <input type="text" id="player-1" required />
+    <label for="player-2">Player 2</label>
+    <input type="text" id="player-2" required />
+    <input type="submit" value="Start Game" id="submit" />
+  </form>
+
+  <div id="game-area" class="hide">
+    <h2 id="player-turn-info" class="message"></h2>
+    <div class="game-board" id="game-board"></div>
+  </div>
+
+  <button id="reset" class="hide">Play Again</button>
+
+  <script>
+    const form = document.getElementById("player-form");
+    const gameBoard = document.getElementById("game-board");
+    const gameArea = document.getElementById("game-area");
+    const playerTurnInfo = document.getElementById("player-turn-info");
+    const reset = document.getElementById("reset");
+
+    let isPlayerTurn = true;
+    const playerOneSelections = [];
+    const playerTwoSelections = [];
+    let selectedBoxesCount = 0;
+    let gameOver = false;
+
+    const winningCombinations = [
+      ["1", "2", "3"],
+      ["4", "5", "6"],
+      ["7", "8", "9"],
+      ["1", "4", "7"],
+      ["2", "5", "8"],
+      ["3", "6", "9"],
+      ["1", "5", "9"],
+      ["3", "5", "7"]
+    ];
+
+    form.addEventListener("submit", storeDetails);
+
+    for (let i = 1; i <= 9; i++) {
+      createDiv(i);
+    }
+
+    const boxes = document.querySelectorAll(".box");
+
+    function createDiv(id) {
+      const div = document.createElement("div");
+      div.id = id;
+      div.classList.add("box");
+      div.setAttribute("role", "button");
+      div.setAttribute("aria-label", `Cell ${id}`);
+      div.setAttribute("tabindex", "0");
+      gameBoard.appendChild(div);
+      div.addEventListener("click", playerTurn);
+    }
+
+    function playerTurn(e) {
+      if (e.target.innerText || gameOver) return;
+
+      const currentPlayer = isPlayerTurn ? "X" : "O";
+      const currentPlayerName = isPlayerTurn
+        ? localStorage.getItem("player1")
+        : localStorage.getItem("player2");
+
+      e.target.innerText = currentPlayer;
+      e.target.style.pointerEvents = "none";
+
+      if (isPlayerTurn) {
+        playerOneSelections.push(e.target.id);
+        playerTurnInfo.innerHTML = `<strong style="color:#f39c12">${localStorage.getItem("player2")}</strong>, you're up`;
+      } else {
+        playerTwoSelections.push(e.target.id);
+        playerTurnInfo.innerHTML = `<strong style="color:#6a0572">${localStorage.getItem("player1")}</strong>, you're up`;
+      }
+
+      selectedBoxesCount++;
+      if (playerOneSelections.length >= 3 || playerTwoSelections.length >= 3) {
+        if (checkWinner(
+          isPlayerTurn ? playerOneSelections : playerTwoSelections,
+          currentPlayerName
+        )) return;
+      }
+
+      if (selectedBoxesCount >= 9 && !gameOver) {
+        playerTurnInfo.innerText = "Draw";
+        playerTurnInfo.classList.add("winner");
+        reset.classList.remove("hide");
+        gameOver = true;
+      }
+
+      isPlayerTurn = !isPlayerTurn;
+    }
+
+    function checkWinner(playerSelections, playerName) {
+      for (let combo of winningCombinations) {
+        if (combo.every(cell => playerSelections.includes(cell))) {
+          playerTurnInfo.innerText = `${playerName}, congratulations you won!`;
+          playerTurnInfo.classList.add("winner");
+          reset.classList.remove("hide");
+          gameOver = true;
+
+          combo.forEach(cell => {
+            boxes[cell - 1].classList.add("winningBackground");
+          });
+
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function storeDetails(e) {
+      e.preventDefault();
+      const player1 = e.target["player-1"].value.trim();
+      const player2 = e.target["player-2"].value.trim();
+
+      if (player1 === "" || player2 === "") {
+        alert("Please enter both player names.");
+        return;
+      }
+
+      if (player1.toLowerCase() === player2.toLowerCase()) {
+        alert("Players must have different names.");
+        return;
+      }
+
+      localStorage.setItem("player1", player1);
+      localStorage.setItem("player2", player2);
+
+      form.classList.add("hide");
+      gameArea.classList.remove("hide");
+
+      playerTurnInfo.innerHTML = `<strong style="color:#6a0572">${player1}</strong>, you're up`;
+    }
+
+    reset.addEventListener("click", gameReset);
+
+    function gameReset() {
+      for (let div of boxes) {
+        div.innerText = "";
+        div.classList.remove("winningBackground");
+        div.style.pointerEvents = "auto";
+      }
+
+      playerOneSelections.length = 0;
+      playerTwoSelections.length = 0;
+      isPlayerTurn = true;
+      selectedBoxesCount = 0;
+      gameOver = false;
+
+      playerTurnInfo.innerHTML = `<strong style="color:#6a0572">${localStorage.getItem("player1")}</strong>, you're up`;
+      playerTurnInfo.classList.remove("winner");
+
+      reset.classList.add("hide");
+    }
+  </script>
+</body>
+
+</html>
